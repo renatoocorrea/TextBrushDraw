@@ -266,16 +266,6 @@ fun TextBrushApp() {
                                 paint
                             )
                         }
-                        Log.e("TESTE", "HERE: ")
-                        /*drawPath(
-                            color = property.color,
-                            path = path,
-                            style = Stroke(
-                                width = property.strokeWidth,
-                                cap = property.strokeCap,
-                                join = property.strokeJoin
-                            )
-                        )*/
                     } else {
                         drawPath(
                             color = Color.Transparent,
@@ -326,7 +316,6 @@ fun TextBrushApp() {
                 .fillMaxWidth()
                 .background(Color.White)
                 .padding(4.dp),
-            pathProperties = currentPathProperty,
             drawMode = drawMode,
             onUndo = {
                 if (paths.isNotEmpty()) {
@@ -349,13 +338,10 @@ fun TextBrushApp() {
                     paths.add(Pair(lastPath, lastPathProperty))
                 }
             },
-            onPathPropertiesChange = {
-                motionEvent = MotionEvent.Idle
-            },
             onDrawModeChanged = {
                 motionEvent = MotionEvent.Idle
                 drawMode = it
-                currentPathProperty.eraseMode = (drawMode == DrawMode.Erase)
+//                currentPathProperty.eraseMode = (drawMode == DrawMode.Erase)
                 Toast.makeText(
                     context, "pathProperty: ${currentPathProperty.hashCode()}, " +
                             "Erase Mode: ${currentPathProperty.eraseMode}", Toast.LENGTH_SHORT
