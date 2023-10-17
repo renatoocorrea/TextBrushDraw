@@ -12,22 +12,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-
-enum class DrawMode {
-    Draw
-}
 
 @Composable
 fun DrawingPropertiesMenu(
     modifier: Modifier = Modifier,
-    drawMode: DrawMode,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
-    onDrawModeChanged: (DrawMode) -> Unit
 ) {
-
-    var currentDrawMode = drawMode
 
     Row(
         modifier = modifier,
@@ -36,37 +27,14 @@ fun DrawingPropertiesMenu(
     ) {
         IconButton(
             onClick = {
-                currentDrawMode = if (currentDrawMode == DrawMode.Draw) {
-                    DrawMode.Draw
-                } else {
-                    DrawMode.Draw
-                }
-                onDrawModeChanged(currentDrawMode)
             }
         ) {
             Icon(
                 Icons.Filled.TouchApp,
                 contentDescription = null,
-                tint = if (currentDrawMode == DrawMode.Draw) Color.Black else Color.LightGray
+                tint = Color.Blue
             )
         }
-        /*IconButton(
-            onClick = {
-                currentDrawMode = if (currentDrawMode == DrawMode.Draw) {
-                    DrawMode.Draw
-                } else {
-                    DrawMode.Draw
-                }
-                onDrawModeChanged(currentDrawMode)
-            }
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_launcher_background),
-                contentDescription = null,
-                tint = if (currentDrawMode == DrawMode.Erase) Color.Black else Color.LightGray
-            )
-        }*/
-
 
         IconButton(onClick = {
             onUndo()

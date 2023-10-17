@@ -50,17 +50,6 @@ suspend fun AwaitPointerEventScope.awaitDragMotionEvent(
     }
 }
 
-fun Modifier.dragMotionEvent(onTouchEvent: (MotionEvent, PointerInputChange) -> Unit) = this.then(
-    Modifier.pointerInput(Unit) {
-        forEachGesture {
-            awaitPointerEventScope {
-                awaitDragMotionEvent(onTouchEvent)
-            }
-        }
-    }
-)
-
-
 suspend fun AwaitPointerEventScope.awaitDragMotionEvent(
     onDragStart: (PointerInputChange) -> Unit = {},
     onDrag: (PointerInputChange) -> Unit = {},
