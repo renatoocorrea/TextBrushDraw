@@ -39,7 +39,7 @@ import androidx.compose.ui.window.Dialog
 import kotlin.math.roundToInt
 
 enum class DrawMode {
-    Draw, Touch, Erase
+    Draw, Erase
 }
 
 @Composable
@@ -55,23 +55,19 @@ fun DrawingPropertiesMenu(
 
     val properties by rememberUpdatedState(newValue = pathProperties)
 
-    var showColorDialog by remember { mutableStateOf(false) }
-    var showPropertiesDialog by remember { mutableStateOf(false) }
     var currentDrawMode = drawMode
 
     Row(
-        modifier = modifier
-//            .background(getRandomColor())
-        ,
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         IconButton(
             onClick = {
-                currentDrawMode = if (currentDrawMode == DrawMode.Touch) {
+                currentDrawMode = if (currentDrawMode == DrawMode.Draw) {
                     DrawMode.Draw
                 } else {
-                    DrawMode.Touch
+                    DrawMode.Draw
                 }
                 onDrawModeChanged(currentDrawMode)
             }
@@ -79,7 +75,7 @@ fun DrawingPropertiesMenu(
             Icon(
                 Icons.Filled.TouchApp,
                 contentDescription = null,
-                tint = if (currentDrawMode == DrawMode.Touch) Color.Black else Color.LightGray
+                tint = if (currentDrawMode == DrawMode.Draw) Color.Black else Color.LightGray
             )
         }
         IconButton(
@@ -100,14 +96,6 @@ fun DrawingPropertiesMenu(
         }
 
 
-        IconButton(onClick = { showColorDialog = !showColorDialog }) {
-//            ColorWheel(modifier = Modifier.size(24.dp))
-        }
-
-        IconButton(onClick = { showPropertiesDialog = !showPropertiesDialog }) {
-            Icon(Icons.Filled.Brush, contentDescription = null, tint = Color.LightGray)
-        }
-
         IconButton(onClick = {
             onUndo()
         }) {
@@ -120,131 +108,7 @@ fun DrawingPropertiesMenu(
             Icon(Icons.Filled.Redo, contentDescription = null, tint = Color.LightGray)
         }
     }
-
-    if (showColorDialog) {
-        ColorSelectionDialog(
-            properties.color,
-            onDismiss = { showColorDialog = !showColorDialog },
-            onNegativeClick = { showColorDialog = !showColorDialog },
-            onPositiveClick = { color: Color ->
-                showColorDialog = !showColorDialog
-                properties.color = color
-            }
-        )
-    }
-
-    if (showPropertiesDialog) {
-        PropertiesMenuDialog(properties) {
-            showPropertiesDialog = !showPropertiesDialog
-        }
-    }
 }
-
-@Composable
-fun PropertiesMenuDialog(pathOption: PathProperties, onDismiss: () -> Unit) {
-
-    var strokeWidth by remember { mutableStateOf(pathOption.strokeWidth) }
-    var strokeCap by remember { mutableStateOf(pathOption.strokeCap) }
-    var strokeJoin by remember { mutableStateOf(pathOption.strokeJoin) }
-
-    Dialog(onDismissRequest = onDismiss) {
-
-        Card(
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.padding(vertical = 8.dp)
-        ) {
-            Column(modifier = Modifier.padding(8.dp)) {
-
-                Text(
-                    text = "Properties",
-                    color = Color.Blue,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 12.dp, top = 12.dp)
-                )
-
-                Canvas(
-                    modifier = Modifier
-                        .padding(horizontal = 24.dp, vertical = 20.dp)
-                        .height(40.dp)
-                        .fillMaxWidth()
-                ) {
-                    val path = Path()
-                    path.moveTo(0f, size.height / 2)
-                    path.lineTo(size.width, size.height / 2)
-
-                    drawPath(
-                        color = pathOption.color,
-                        path = path,
-                        style = Stroke(
-                            width = strokeWidth,
-                            cap = strokeCap,
-                            join = strokeJoin
-                        )
-                    )
-                }
-
-                Text(
-                    text = "Stroke Width ${strokeWidth.toInt()}",
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
-
-                Slider(
-                    value = strokeWidth,
-                    onValueChange = {
-                        strokeWidth = it
-                        pathOption.strokeWidth = strokeWidth
-                    },
-                    valueRange = 1f..100f,
-                    onValueChangeFinished = {}
-                )
-
-
-                ExposedSelectionMenu(title = "Stroke Cap",
-                    index = when (strokeCap) {
-                        StrokeCap.Butt -> 0
-                        StrokeCap.Round -> 1
-                        else -> 2
-                    },
-                    options = listOf("Butt", "Round", "Square"),
-                    onSelected = {
-                        println("STOKE CAP $it")
-                        strokeCap = when (it) {
-                            0 -> StrokeCap.Butt
-                            1 -> StrokeCap.Round
-                            else -> StrokeCap.Square
-                        }
-
-                        pathOption.strokeCap = strokeCap
-
-                    }
-                )
-
-                ExposedSelectionMenu(title = "Stroke Join",
-                    index = when (strokeJoin) {
-                        StrokeJoin.Miter -> 0
-                        StrokeJoin.Round -> 1
-                        else -> 2
-                    },
-                    options = listOf("Miter", "Round", "Bevel"),
-                    onSelected = {
-                        println("STOKE JOIN $it")
-
-                        strokeJoin = when (it) {
-                            0 -> StrokeJoin.Miter
-                            1 -> StrokeJoin.Round
-                            else -> StrokeJoin.Bevel
-                        }
-
-                        pathOption.strokeJoin = strokeJoin
-                    }
-                )
-            }
-        }
-    }
-}
-
 
 @Composable
 fun ColorSelectionDialog(
@@ -264,149 +128,6 @@ fun ColorSelectionDialog(
         blue = blue.roundToInt(),
         alpha = alpha.roundToInt()
     )
-
-    Dialog(onDismissRequest = onDismiss) {
-
-        BoxWithConstraints(
-            Modifier
-                .shadow(1.dp, RoundedCornerShape(8.dp))
-                .background(Color.White)
-        ) {
-
-            val widthInDp = LocalDensity.current.run { maxWidth }
-
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
-                Text(
-                    text = "Color",
-                    color = Color.Blue,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 12.dp)
-                )
-
-                // Initial and Current Colors
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 50.dp, vertical = 20.dp)
-                ) {
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(40.dp)
-                            .background(
-                                initialColor,
-                                shape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)
-                            )
-                    )
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(40.dp)
-                            .background(
-                                color,
-                                shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp)
-                            )
-                    )
-                }
-
-                ColorWheel(
-                    modifier = Modifier
-                        .width(widthInDp * .8f)
-                        .aspectRatio(1f)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Sliders
-                ColorSlider(
-                    modifier = Modifier
-                        .padding(start = 12.dp, end = 12.dp)
-                        .fillMaxWidth(),
-                    title = "Red",
-                    titleColor = Color.Red,
-                    rgb = red,
-                    onColorChanged = {
-                        red = it
-                    }
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                ColorSlider(
-                    modifier = Modifier
-                        .padding(start = 12.dp, end = 12.dp)
-                        .fillMaxWidth(),
-                    title = "Green",
-                    titleColor = Color.Green,
-                    rgb = green,
-                    onColorChanged = {
-                        green = it
-                    }
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-
-                ColorSlider(
-                    modifier = Modifier
-                        .padding(start = 12.dp, end = 12.dp)
-                        .fillMaxWidth(),
-                    title = "Blue",
-                    titleColor = Color.Blue,
-                    rgb = blue,
-                    onColorChanged = {
-                        blue = it
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                ColorSlider(
-                    modifier = Modifier
-                        .padding(start = 12.dp, end = 12.dp)
-                        .fillMaxWidth(),
-                    title = "Alpha",
-                    titleColor = Color.Black,
-                    rgb = alpha,
-                    onColorChanged = {
-                        alpha = it
-                    }
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Buttons
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
-                        .background(Color(0xffF3E5F5)),
-                    verticalAlignment = Alignment.CenterVertically
-
-                ) {
-
-                    TextButton(
-                        onClick = onNegativeClick,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                    ) {
-                        Text(text = "CANCEL")
-                    }
-                    TextButton(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                        onClick = {
-                            onPositiveClick(color)
-                        },
-                    ) {
-                        Text(text = "OK")
-                    }
-                }
-            }
-        }
-    }
 }
 
 /**

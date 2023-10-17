@@ -66,11 +66,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-       /* val path = Path()
-        val auxX = 411
-        val auxY = 656
-        path.lineTo(auxX.toFloat(), auxY.toFloat())*/
-        val path = Path()
         setContent {
             TextBrushTheme {
                 // A surface container using the 'background' color from the theme
@@ -78,39 +73,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    DrawingApp()
-                    /*Box(modifier = Modifier.fillMaxSize()) {
-//                    Greeting("Android")
-                        ArcTextExample()
-                    }*/
-                    /*Box(
-                        Modifier.pointerInput(Unit) {
-                            detectDragGestures { change, dragAmount ->
-                                if (change.changedToDownIgnoreConsumed()) {
-                                    val x = change.position.x
-                                    val y = change.position.y
-                                    Log.e("TESTE", "X: " + x)
-                                    Log.e("TESTE", "Y: " + y)
-                                    path.lineTo(x, y)
-                                    mutableState.update {
-                                        Log.e("TESTE", "UPDATED: " + it.toString())
-                                        (Path(path))
-                                    }
-                                } else {
-                                    change.consume()
-                                }
-
-//                                    change.consume()
-                                //...
-                            }
-                        }
-
-                    ) {
-                        val state = state.collectAsState(initial = null)
-                        state.value?.let {
-                            NewArcTextExample(it)
-                        }
-                    }*/
+                    TextBrushApp()
                 }
             }
         }
@@ -118,7 +81,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun DrawingApp() {
+fun TextBrushApp() {
 
     val context = LocalContext.current
 
@@ -126,7 +89,8 @@ fun DrawingApp() {
      * Paths that are added, this is required to have paths with different options and paths
      *  ith erase to keep over each other
      */
-    val paths = remember { mutableStateListOf<Pair<androidx.compose.ui.graphics.Path, PathProperties>>() }
+    val paths =
+        remember { mutableStateListOf<Pair<androidx.compose.ui.graphics.Path, PathProperties>>() }
 
     /**
      * Paths that are undone via button. These paths are restored if user pushes
@@ -135,7 +99,8 @@ fun DrawingApp() {
      * If new path is drawn after this list is cleared to not break paths after undoing previous
      * ones.
      */
-    val pathsUndone = remember { mutableStateListOf<Pair<androidx.compose.ui.graphics.Path, PathProperties>>() }
+    val pathsUndone =
+        remember { mutableStateListOf<Pair<androidx.compose.ui.graphics.Path, PathProperties>>() }
 
     /**
      * Canvas touch state. [MotionEvent.Idle] by default, [MotionEvent.Down] at first contact,
@@ -170,7 +135,6 @@ fun DrawingApp() {
      */
     var currentPathProperty by remember { mutableStateOf(PathProperties()) }
 
-    val canvasText = remember { StringBuilder() }
     val paint = remember {
         android.graphics.Paint().apply {
             textSize = 40f
@@ -190,7 +154,6 @@ fun DrawingApp() {
             .fillMaxWidth()
             .weight(1f)
             .background(Color.White)
-//            .background(getRandomColor())
             .dragMotionEvent(
                 onDragStart = { pointerInputChange ->
                     motionEvent = MotionEvent.Down
@@ -202,7 +165,7 @@ fun DrawingApp() {
                     motionEvent = MotionEvent.Move
                     currentPosition = pointerInputChange.position
 
-                    if (drawMode == DrawMode.Touch) {
+                    /*if (drawMode == DrawMode.Touch) {
                         val change = pointerInputChange.positionChange()
                         println("DRAG: $change")
                         paths.forEach { entry ->
@@ -210,7 +173,7 @@ fun DrawingApp() {
                             path.translate(change)
                         }
                         currentPath.translate(change)
-                    }
+                    }*/
                     pointerInputChange.consumePositionChange()
 
                 },
@@ -225,16 +188,17 @@ fun DrawingApp() {
             when (motionEvent) {
 
                 MotionEvent.Down -> {
-                    if (drawMode != DrawMode.Touch) {
-                        currentPath.moveTo(currentPosition.x, currentPosition.y)
-                    }
+//                    if (drawMode != DrawMode.Touch) {
+                    currentPath.moveTo(currentPosition.x, currentPosition.y)
+//                    }
 
                     previousPosition = currentPosition
 
                 }
+
                 MotionEvent.Move -> {
 
-                    if (drawMode != DrawMode.Touch) {
+//                    if (drawMode != DrawMode.Touch) {
                         currentPath.quadraticBezierTo(
                             previousPosition.x,
                             previousPosition.y,
@@ -242,13 +206,13 @@ fun DrawingApp() {
                             (previousPosition.y + currentPosition.y) / 2
 
                         )
-                    }
+//                    }
 
                     previousPosition = currentPosition
                 }
 
                 MotionEvent.Up -> {
-                    if (drawMode != DrawMode.Touch) {
+                    if (drawMode == DrawMode.Draw) {
                         currentPath.lineTo(currentPosition.x, currentPosition.y)
 
                         // Pointer is up save current path
@@ -279,6 +243,7 @@ fun DrawingApp() {
                     previousPosition = currentPosition
                     motionEvent = MotionEvent.Idle
                 }
+
                 else -> Unit
             }
 
@@ -293,7 +258,13 @@ fun DrawingApp() {
 
                     if (!property.eraseMode) {
                         drawIntoCanvas {
-                            it.nativeCanvas.drawTextOnPath("Hello World Example", path.asAndroidPath(), 0f, 0f, paint)
+                            it.nativeCanvas.drawTextOnPath(
+                                "Hello World Example",
+                                path.asAndroidPath(),
+                                0f,
+                                0f,
+                                paint
+                            )
                         }
                         Log.e("TESTE", "HERE: ")
                         /*drawPath(
@@ -306,10 +277,6 @@ fun DrawingApp() {
                             )
                         )*/
                     } else {
-                        /*drawIntoCanvas {
-                            it.nativeCanvas.drawTextOnPath("Hello World Example", path.asAndroidPath(), 0f, 0f, paint)
-                        }*/
-                        // Source
                         drawPath(
                             color = Color.Transparent,
                             path = path,
@@ -396,68 +363,4 @@ fun DrawingApp() {
             }
         )
     }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TextBrushTheme {
-        Greeting("Android")
-    }
-}
-
-@Composable
-fun ArcTextExample() {
-    val paint = Paint().asFrameworkPaint()
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        paint.apply {
-            isAntiAlias = true
-            textSize = 24f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        }
-
-        drawIntoCanvas {
-            val path = Path()
-//            path.addArc(RectF(0f, 100f, 200f, 300f), 270f, 180f)
-//            it.nativeCanvas.drawTextOnPath("Hello World Example", path, 0f, 0f, paint)
-        }
-    }
-}
-
-@Composable
-fun NewArcTextExample(path: Path) {
-    Log.e("TESTE", "NEW ARCTEST:  " + path.toString())
-    val paint = Paint().asFrameworkPaint()
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        paint.apply {
-            isAntiAlias = true
-            textSize = 24f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        }
-
-        drawIntoCanvas {
-            it.nativeCanvas.drawTextOnPath("Hello World Example", path.asAndroidPath(), 0f, 0f, paint)
-        }
-    }
-}
-
-@Composable
-fun CanvasCircleExample() {
-    // [START android_compose_graphics_canvas_circle]
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val canvasQuadrantSize = size / 2F
-        drawRect(
-            color = Color.Magenta,
-            size = canvasQuadrantSize
-        )
-    }
-    // [END android_compose_graphics_canvas_circle]
 }
