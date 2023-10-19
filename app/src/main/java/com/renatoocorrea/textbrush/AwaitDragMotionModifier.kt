@@ -17,50 +17,40 @@ enum class MotionEvent {
 }
 
 suspend fun AwaitPointerEventScope.awaitDragMotionEvent(
-    onDragStart: (PointerInputChange) -> Unit = {},
+    onStartingDrag: (PointerInputChange) -> Unit = {},
     onDrag: (PointerInputChange) -> Unit = {},
-    onDragEnd: (PointerInputChange) -> Unit = {}
+    onEndingDrag: (PointerInputChange) -> Unit = {}
 ) {
-    // Wait for at least one pointer to press down, and set first contact position
     val down: PointerInputChange = awaitFirstDown()
-    onDragStart(down)
+    onStartingDrag(down)
 
     var pointer = down
 
-    // 🔥 Waits for drag threshold to be passed by pointer
-    // or it returns null if up event is triggered
     val change: PointerInputChange? =
         awaitTouchSlopOrCancellation(down.id) { change: PointerInputChange, over: Offset ->
-            // 🔥🔥 If consumePositionChange() is not consumed drag does not
-            // function properly.
-            // Consuming position change causes change.positionChanged() to return false.
             change.consumePositionChange()
         }
 
     if (change != null) {
-        // 🔥 Calls  awaitDragOrCancellation(pointer) in a while loop
         drag(change.id) { pointerInputChange: PointerInputChange ->
             pointer = pointerInputChange
             onDrag(pointer)
         }
-
-        // All of the pointers are up
-        onDragEnd(pointer)
+        onEndingDrag(pointer)
     } else {
-        // Drag threshold is not passed and last pointer is up
-        onDragEnd(pointer)
+        onEndingDrag(pointer)
     }
 }
 
 fun Modifier.dragMotionEvent(
-    onDragStart: (PointerInputChange) -> Unit = {},
+    onStartingDrag: (PointerInputChange) -> Unit = {},
     onDrag: (PointerInputChange) -> Unit = {},
-    onDragEnd: (PointerInputChange) -> Unit = {}
+    onEndingDrag: (PointerInputChange) -> Unit = {}
 ) = this.then(
     Modifier.pointerInput(Unit) {
         forEachGesture {
             awaitPointerEventScope {
-                awaitDragMotionEvent(onDragStart, onDrag, onDragEnd)
+                awaitDragMotionEvent(onStartingDrag, onDrag, onEndingDrag)
             }
         }
     }

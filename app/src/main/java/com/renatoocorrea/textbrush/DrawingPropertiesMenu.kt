@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 
 @Composable
-fun DrawingPropertiesMenu(
+fun BottomMenu(
     modifier: Modifier = Modifier,
     onUndo: () -> Unit,
     onRedo: () -> Unit,

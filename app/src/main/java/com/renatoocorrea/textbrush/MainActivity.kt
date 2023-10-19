@@ -31,7 +31,6 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.consumeDownChange
 import androidx.compose.ui.input.pointer.consumePositionChange
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.renatoocorrea.textbrush.ui.theme.TextBrushTheme
 
@@ -42,7 +41,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             TextBrushTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -56,10 +54,9 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun TextBrushApp() {
-    val paths = remember { mutableStateListOf<Pair<Path, PathProperties>>() }
 
-    val pathsUndone = remember { mutableStateListOf<Pair<Path, PathProperties>>() }
-
+    val pathsToBeDrawn = remember { mutableStateListOf<Pair<Path, PathProperties>>() }
+    val undoneStack = remember { mutableStateListOf<Pair<Path, PathProperties>>() }
     var motionEvent by remember { mutableStateOf(MotionEvent.Idle) }
     var currentPosition by remember { mutableStateOf(Offset.Unspecified) }
     var previousPosition by remember { mutableStateOf(Offset.Unspecified) }
@@ -86,7 +83,7 @@ fun TextBrushApp() {
             .weight(1f)
             .background(Color.White)
             .dragMotionEvent(
-                onDragStart = { pointerInputChange ->
+                onStartingDrag = { pointerInputChange ->
                     motionEvent = MotionEvent.Down
                     currentPosition = pointerInputChange.position
                     pointerInputChange.consumeDownChange()
@@ -98,23 +95,23 @@ fun TextBrushApp() {
                     pointerInputChange.consumePositionChange()
 
                 },
-                onDragEnd = { pointerInputChange ->
+                onEndingDrag = { pointerInputChange ->
                     motionEvent = MotionEvent.Up
                     pointerInputChange.consumeDownChange()
                 }
             )
 
         Canvas(modifier = drawModifier) {
-
             when (motionEvent) {
 
                 MotionEvent.Down -> {
                     currentPath.moveTo(currentPosition.x, currentPosition.y)
                     previousPosition = currentPosition
-
                 }
 
                 MotionEvent.Move -> {
+                    //Using this quadratic because using lines only, gave a quadratic look at
+                    //brush path.
                     currentPath.quadraticBezierTo(
                         previousPosition.x,
                         previousPosition.y,
@@ -128,7 +125,7 @@ fun TextBrushApp() {
                 MotionEvent.Up -> {
                     currentPath.lineTo(currentPosition.x, currentPosition.y)
 
-                    paths.add(Pair(currentPath, currentPathProperty))
+                    pathsToBeDrawn.add(Pair(currentPath, currentPathProperty))
                     currentPath = Path()
                     currentPathProperty = PathProperties(
                         strokeWidth = currentPathProperty.strokeWidth,
@@ -138,11 +135,7 @@ fun TextBrushApp() {
                         eraseMode = currentPathProperty.eraseMode
                     )
 
-                    // Since new path is drawn no need to store paths to undone
-                    pathsUndone.clear()
-
-                    // If we leave this state at MotionEvent.Up it causes current path to draw
-                    // line from (0,0) if this composable recomposes when draw mode is changed
+                    undoneStack.clear()
                     currentPosition = Offset.Unspecified
                     previousPosition = currentPosition
                     motionEvent = MotionEvent.Idle
@@ -152,68 +145,36 @@ fun TextBrushApp() {
             }
 
             with(drawContext.canvas.nativeCanvas) {
-
                 val checkPoint = saveLayer(null, null)
-
-                paths.forEach {
-
+                pathsToBeDrawn.forEach {
                     val path = it.first
-                    val property = it.second
-
-                    if (!property.eraseMode) {
-                        drawIntoCanvas {
-                            it.nativeCanvas.drawTextOnPath(
-                                "Hello World Example",
-                                path.asAndroidPath(),
-                                0f,
-                                0f,
-                                paint
-                            )
-                        }
-                    } else {
-                        drawPath(
-                            color = Color.Transparent,
-                            path = path,
-                            style = Stroke(
-                                width = currentPathProperty.strokeWidth,
-                                cap = currentPathProperty.strokeCap,
-                                join = currentPathProperty.strokeJoin
-                            ),
-                            blendMode = BlendMode.Clear
+                    drawIntoCanvas {
+                        it.nativeCanvas.drawTextOnPath(
+                            "Hello World Example ",
+                            path.asAndroidPath(),
+                            0f,
+                            0f,
+                            paint
                         )
                     }
                 }
 
                 if (motionEvent != MotionEvent.Idle) {
-
-                    if (!currentPathProperty.eraseMode) {
-                        drawPath(
-                            color = currentPathProperty.color,
-                            path = currentPath,
-                            style = Stroke(
-                                width = currentPathProperty.strokeWidth,
-                                cap = currentPathProperty.strokeCap,
-                                join = currentPathProperty.strokeJoin
-                            )
+                    drawPath(
+                        color = currentPathProperty.color,
+                        path = currentPath,
+                        style = Stroke(
+                            width = currentPathProperty.strokeWidth,
+                            cap = currentPathProperty.strokeCap,
+                            join = currentPathProperty.strokeJoin
                         )
-                    } else {
-                        drawPath(
-                            color = Color.Transparent,
-                            path = currentPath,
-                            style = Stroke(
-                                width = currentPathProperty.strokeWidth,
-                                cap = currentPathProperty.strokeCap,
-                                join = currentPathProperty.strokeJoin
-                            ),
-                            blendMode = BlendMode.Clear
-                        )
-                    }
+                    )
                 }
                 restoreToCount(checkPoint)
             }
         }
 
-        DrawingPropertiesMenu(
+        BottomMenu(
             modifier = Modifier
                 .padding(bottom = 8.dp, start = 8.dp, end = 8.dp)
                 .shadow(1.dp, RoundedCornerShape(8.dp))
@@ -221,23 +182,20 @@ fun TextBrushApp() {
                 .background(Color.White)
                 .padding(4.dp),
             onUndo = {
-                if (paths.isNotEmpty()) {
-
-                    val lastItem = paths.last()
+                if (pathsToBeDrawn.isNotEmpty()) {
+                    val lastItem = pathsToBeDrawn.last()
                     val lastPath = lastItem.first
                     val lastPathProperty = lastItem.second
-                    paths.remove(lastItem)
-
-                    pathsUndone.add(Pair(lastPath, lastPathProperty))
-
+                    pathsToBeDrawn.remove(lastItem)
+                    undoneStack.add(Pair(lastPath, lastPathProperty))
                 }
             },
             onRedo = {
-                if (pathsUndone.isNotEmpty()) {
-                    val lastPath = pathsUndone.last().first
-                    val lastPathProperty = pathsUndone.last().second
-                    pathsUndone.removeLast()
-                    paths.add(Pair(lastPath, lastPathProperty))
+                if (undoneStack.isNotEmpty()) {
+                    val lastPath = undoneStack.last().first
+                    val lastPathProperty = undoneStack.last().second
+                    undoneStack.removeLast()
+                    pathsToBeDrawn.add(Pair(lastPath, lastPathProperty))
                 }
             }
         )
