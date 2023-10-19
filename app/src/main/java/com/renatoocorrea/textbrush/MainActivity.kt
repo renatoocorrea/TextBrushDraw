@@ -21,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidPath
@@ -145,7 +144,6 @@ fun TextBrushApp() {
             }
 
             with(drawContext.canvas.nativeCanvas) {
-                val checkPoint = saveLayer(null, null)
                 pathsToBeDrawn.forEach {
                     val path = it.first
                     drawIntoCanvas {
@@ -170,7 +168,6 @@ fun TextBrushApp() {
                         )
                     )
                 }
-                restoreToCount(checkPoint)
             }
         }
 
